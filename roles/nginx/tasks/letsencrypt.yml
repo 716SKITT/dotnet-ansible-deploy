@@ -1,0 +1,42 @@
+---
+- name: Check if certificate exists
+  stat:
+    path: "/etc/letsencrypt/live/{{ server_name }}/fullchain.pem"
+  register: le_cert
+
+- name: Obtain Let's Encrypt cert
+  command: >
+    certbot certonly --webroot
+    -w /var/www/letsencrypt
+    -d {{ server_name }}
+    --email {{ letsencrypt_email }}
+    --agree-tos --non-interactive
+    {{ '--staging' if letsencrypt_staging|default(false) else '' }}
+  when: not le_cert.stat.exists
+  register: le_issue
+  changed_when: le_cert.stat.exists == false
+
+- name: Write site (HTTPS)
+  template:
+    src: site-https.conf.j2
+    dest: "/etc/nginx/sites-available/{{ app_name }}.conf"
+    mode: '0644'
+  when: le_cert.stat.exists or (le_issue is defined and le_issue.rc == 0)
+  register: site_https_tpl
+
+- name: nginx -t (https)
+  command: nginx -t
+  changed_when: false
+  when: site_https_tpl is defined
+  register: nginx_test_https
+
+- name: Fail if invalid https config
+  fail:
+    msg: "nginx config test failed: {{ nginx_test_https.stderr }}"
+  when: site_https_tpl is defined and nginx_test_https.rc != 0
+
+- name: Reload nginx (switch to https)
+  service:
+    name: nginx
+    state: reloaded
+  when: site_https_tpl is defined and site_https_tpl.changed

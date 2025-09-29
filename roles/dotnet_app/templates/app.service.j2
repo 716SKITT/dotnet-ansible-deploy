@@ -1,0 +1,19 @@
+[Unit]
+Description={{ app_name }} .NET Web Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory={{ app_publish_dir }}
+ExecStart=/usr/bin/dotnet {{ app_publish_dir }}/{{ app_binary_name }} --urls=http://0.0.0.0:{{ app_port }}
+Restart=always
+RestartSec=5
+KillSignal=SIGINT
+SyslogIdentifier={{ app_name }}
+User={{ app_user }}
+Group={{ app_group }}
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+[Install]
+WantedBy=multi-user.target

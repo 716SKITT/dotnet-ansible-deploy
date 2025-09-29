@@ -1,0 +1,12 @@
+---
+- hosts: "{{ target_color }}"
+  become: yes
+  roles:
+    - dotnet_app
+
+- hosts: lb
+  become: yes
+  vars:
+    active_color: "{{ target_color }}"
+  roles:
+    - nginx

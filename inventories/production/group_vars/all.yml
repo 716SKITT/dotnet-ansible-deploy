@@ -1,0 +1,19 @@
+app_name: "my-dotnet-app"
+app_user: "dotnetuser"
+app_group: "dotnetuser"
+app_port: 5000
+
+repo_url: "https://github.com/716SKITT/test-app.git"
+repo_branch: "master"
+app_project: "MyWebApp.csproj"
+app_binary_name: "MyWebApp.dll"
+
+app_install_dir: "/opt/{{ app_name }}"
+app_src_dir: "/opt/{{ app_name }}/src"
+app_publish_dir: "/opt/{{ app_name }}/publish"
+
+dotnet_sdk_version: "8.0"
+
+server_name: "716perofrmance.ru"
+letsencrypt_email: "asd@qwe.com"
+letsencrypt_staging: false 

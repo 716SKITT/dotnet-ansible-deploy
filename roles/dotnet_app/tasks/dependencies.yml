@@ -1,0 +1,28 @@
+---
+- name: Install prerequisites
+  apt:
+    name:
+      - curl
+      - gnupg
+      - git
+    state: present
+    update_cache: yes
+
+- name: Install .NET SDK
+  apt:
+    name: "dotnet-sdk-{{ dotnet_sdk_version }}"
+    state: present
+    update_cache: yes
+
+- name: Create application group
+  group:
+    name: "{{ app_group }}"
+    system: yes
+
+- name: Create application user
+  user:
+    name: "{{ app_user }}"
+    group: "{{ app_group }}"
+    system: yes
+    create_home: no
+    shell: /usr/sbin/nologin

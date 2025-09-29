@@ -1,0 +1,44 @@
+---
+- hosts: lb
+  become: true
+  gather_facts: false
+  vars:
+    upstream_path: "/etc/nginx/conf.d/{{ app_name }}-upstream.conf"
+
+  tasks:
+    - name: Resolve IPs of colors
+      set_fact:
+        blue_ip:  "{{ hostvars[groups['blue'][0]].ansible_host }}"
+        green_ip: "{{ hostvars[groups['green'][0]].ansible_host }}"
+
+    - name: Read current upstream
+      slurp:
+        src: "{{ upstream_path }}"
+      register: upstream_raw
+
+    - name: Parse active IP from upstream
+      set_fact:
+        active_ip: >-
+          {{ (upstream_raw.content | b64decode)
+             | regex_search('server\\s+([0-9\\.]+):\\d+;', '\\1') }}
+
+    - name: Determine active/passive colors
+      set_fact:
+        active_color:  "{{ 'blue'  if active_ip == blue_ip  else 'green' }}"
+        passive_color: "{{ 'green' if active_ip == blue_ip  else 'blue'  }}"
+        passive_ip:    "{{ green_ip if active_ip == blue_ip else blue_ip }}"
+
+    - name: Health check passive color before rollback
+      uri:
+        url: "http://{{ passive_ip }}:{{ app_port }}/health"
+        status_code: 200
+      register: hc
+      retries: 10
+      delay: 2
+      until: hc.status == 200
+
+    - name: Switch LB to passive color (perform rollback)
+      include_role:
+        name: lb_nginx
+      vars:
+        active_color: "{{ passive_color }}"

@@ -1,0 +1,11 @@
+map $upstream_addr $bg_color {
+    default unknown;
+    "~^{{ hostvars[groups['blue'][0]].ansible_host }}:{{ app_port }}$"  blue;
+    "~^{{ hostvars[groups['green'][0]].ansible_host }}:{{ app_port }}$" green;
+}
+
+log_format main_color
+    '$remote_addr - $remote_user [$time_local] "$request" '
+    '$status $body_bytes_sent "$http_referer" "$http_user_agent" '
+    'upstream=$upstream_addr color=$bg_color '
+    'rt=$request_time urt=$upstream_response_time';
